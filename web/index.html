@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>带货视频</title>
+<style>
+  :root {
+    --bg: #f3f0e8;
+    --paper: #fffcf7;
+    --ink: #1c1915;
+    --muted: #6f675e;
+    --line: #e3dcd0;
+    --accent: #1f4d3a;
+    --accent-soft: #e5f0ea;
+    --warn: #8a4b12;
+    --warn-soft: #f8efe4;
+    --bad: #8f2d2d;
+    --bad-soft: #f8e8e6;
+    --night: #243044;
+    --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding: 16px 28px;
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .brand { font-weight: 650; letter-spacing: 0.01em; }
+  .brand small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+  nav { display: flex; gap: 6px; }
+  nav button, .btn {
+    border: 1px solid var(--line);
+    background: transparent;
+    border-radius: 999px;
+    padding: 7px 14px;
+  }
+  nav button[aria-current="page"] {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  main { max-width: 1180px; margin: 0 auto; padding: 28px 28px 64px; }
+  .banner {
+    background: var(--warn-soft);
+    color: var(--warn);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 22px;
+    font-size: 13px;
+  }
+  h1 { font-size: 28px; font-weight: 650; margin: 0 0 6px; }
+  .lede { color: var(--muted); margin: 0 0 22px; }
+  .panel {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px;
+  }
+  label { display: block; font-size: 13px; margin-bottom: 6px; }
+  input[type="url"], input[type="text"], textarea {
+    width: 100%;
+    border: 1px solid var(--line);
+    background: white;
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  textarea { min-height: 88px; resize: vertical; }
+  .field { margin-bottom: 14px; }
+  .row-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .layout {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+  .layout > * { min-width: 0; }
+  .status-rail { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 16px; }
+  .status-rail span {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: white;
+    border: 1px solid var(--line);
+    color: var(--muted);
+  }
+  .status-rail span.on { background: var(--accent); color: white; border-color: var(--accent); }
+  .status-rail span.bad.on { background: var(--bad); border-color: var(--bad); }
+  .cards { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+  .shot {
+    flex: 0 0 240px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .frame {
+    height: 132px;
+    background: var(--night);
+    color: #f3f0e8;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    padding: 10px;
+    font-size: 13px;
+  }
+  .frame b { font-size: 12px; font-weight: 500; }
+  .time {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(255,252,247,0.92);
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 12px;
+  }
+  .shot .body { padding: 12px; }
+  .shot h3 { margin: 0 0 6px; font-size: 14px; }
+  .shot p { margin: 0 0 8px; color: var(--muted); font-size: 13px; }
+  .meta { font-size: 12px; color: var(--muted); }
+  .shot.fail { border-color: #e2b2ac; }
+  .checks { margin-top: 16px; }
+  .check {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .ok { color: var(--accent); }
+  .no { color: var(--bad); }
+  table { width: 100%; border-collapse: collapse; background: var(--paper); }
+  th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--line); vertical-align: top; white-space: nowrap; }
+  td:nth-child(2) { white-space: normal; }
+  th { font-size: 12px; color: var(--muted); font-weight: 550; }
+  .player {
+    height: 36px;
+    border-radius: 999px;
+    background: var(--night);
+    color: #f3f0e8;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    font-size: 12px;
+    max-width: 220px;
+  }
+  .note { color: var(--muted); font-size: 13px; margin-top: 8px; }
+  .product-img {
+    height: 140px;
+    border-radius: 8px;
+    background: #d9e4dc;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: flex-end;
+    padding: 10px;
+    font-size: 13px;
+  }
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 12px 14px;
+    border-radius: 8px;
+    max-width: 320px;
+    display: none;
+  }
+  @media (max-width: 860px) {
+    header { flex-wrap: wrap; gap: 12px; padding: 14px; }
+    main { padding: 18px 14px 48px; }
+    .layout { grid-template-columns: 1fr; }
+    h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">带货视频<small>白天准备 · 晚上出片</small></div>
+  <nav>
+    <button type="button" data-screen="new" aria-current="page">新建</button>
+    <button type="button" data-screen="job">任务</button>
+    <button type="button" data-screen="queue">今晚队列</button>
+  </nav>
+</header>
+<main>
+  <div class="banner">演示数据。Playwright、yt-dlp 和 RunningHub 尚未接入。提交和检查只在这个页面里变化。</div>
+
+  <section id="screen-new" class="screen active">
+    <h1>新建一条视频</h1>
+    <p class="lede">提交后立刻得到任务编号。白天只整理商品和分镜，不调用 RunningHub。</p>
+    <form class="panel" id="create-form">
+      <div class="field">
+        <label for="product-url">商品链接</label>
+        <input id="product-url" type="url" required placeholder="https://www.tiktok.com/view/product/..." value="https://www.tiktok.com/view/product/1739000000000000001">
+      </div>
+      <div class="field">
+        <label for="video-url">爆款视频链接</label>
+        <input id="video-url" type="url" required placeholder="https://www.tiktok.com/@shop/video/..." value="https://www.tiktok.com/@demo/video/7600000000000000001">
+      </div>
+      <div class="row-actions">
+        <button class="btn primary" type="submit">提交并查看任务</button>
+        <span class="note" id="create-hint">编号会马上返回，页面不会干等到出片。</span>
+      </div>
+    </form>
+  </section>
+
+  <section id="screen-job" class="screen">
+    <h1 id="job-title">任务 SV-1041</h1>
+    <p class="lede" id="job-lede">检查中 · 第 1 轮 · 有 1 条未通过</p>
+    <div class="status-rail" id="status-rail"></div>
+    <div class="layout">
+      <aside class="panel">
+        <div class="product-img">商品主图 · 磁吸手机支架</div>
+        <div class="field">
+          <label for="fact-title">标题</label>
+          <input id="fact-title" type="text" value="桌面磁吸手机支架">
+        </div>
+        <div class="field">
+          <label for="fact-price">价格</label>
+          <input id="fact-price" type="text" value="USD 16.90">
+        </div>
+        <div class="field">
+          <label for="fact-points">卖点（只保留页面上有的）</label>
+          <textarea id="fact-points">铝合金折叠底座。磁吸兼容带磁吸环的手机壳。俯仰约 70 度。</textarea>
+        </div>
+        <p class="note">这些字段来自商品页原文。页面上没有的句子不要写进来。</p>
+      </aside>
+      <div>
+        <div class="cards" id="cards"></div>
+        <div class="panel checks">
+          <strong id="check-heading">检查结果</strong>
+          <div id="check-list"></div>
+          <div class="row-actions" style="margin-top:14px">
+            <button class="btn" type="button" id="btn-recheck">保存并重新检查</button>
+            <button class="btn primary" type="button" id="btn-queue" disabled>通过，排进今晚</button>
+            <button class="btn warn" type="button" id="btn-human">标为需人工</button>
+          </div>
+          <p class="note" id="job-note">第 5 镜把中文字幕写进了生成提示词。字幕应留到成片之后再叠。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-queue" class="screen">
+    <h1>今晚队列</h1>
+    <p class="lede">北京时间 00:00 开始接收，09:30 后不再提交新任务。同时最多 2 条。生成中的任务不能改分镜。</p>
+    <div class="panel" style="padding:0; overflow:auto">
+      <table>
+        <thead>
+          <tr><th>任务</th><th>商品</th><th>状态</th><th>成片</th></tr>
+        </thead>
+        <tbody id="queue-body"></tbody>
+      </table>
+    </div>
+    <p class="note">演示队列里已有一条生成中、一条已完成。你从任务页排进来的编号会出现在表的第一行。</p>
+  </section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+const STATUSES = ["收集中", "写分镜", "检查中", "已排队", "生成中", "已完成", "需人工"];
+const SHOTS = [
+  { t: "0.0–2.0s", title: "手伸进画面", text: "先给钩子：手从画面左侧入画，拿起支架。", keep: "替换人脸，保留动作", tone: "#31475f" },
+  { t: "2.0–5.0s", title: "吸上手机", text: "手机背面贴上支架。商品外观锁定主图。", keep: "保留商品", tone: "#3d5a4c" },
+  { t: "5.0–9.0s", title: "俯仰调节", text: "手指拨动支架，角度变化可见。", keep: "保留动作", tone: "#4d463c" },
+  { t: "9.0–12.0s", title: "桌面使用", text: "支架立在桌面上，手机横屏。", keep: "替换背景人物", tone: "#5c4034" },
+  { t: "12.0–15.0s", title: "收束", text: "商品停在画面中央。口播最后一句。", keep: "字幕后期叠加", tone: "#243044" }
+];
+const CHECKS_FAIL = [
+  ["商品外观与主图一致", true],
+  ["卖点都能在商品原文里找到", true],
+  ["五镜时长合计 15 秒", true],
+  ["前 3 秒有钩子", true],
+  ["第 5 镜没有把中文字幕写进生成提示词", false]
+];
+const CHECKS_PASS = CHECKS_FAIL.map(([name]) => [name, true]);
+
+const state = {
+  id: "SV-1041",
+  status: "检查中",
+  round: 1,
+  passed: false,
+  human: false,
+  queued: false
+};
+const queueSeed = [
+  { id: "SV-1038", name: "便携榨汁杯", status: "生成中", play: "生成中，不能改分镜" },
+  { id: "SV-1031", name: "折叠沥水篮", status: "已完成", play: "播放 15s" }
+];
+
+const $ = (id) => document.getElementById(id);
+
+function show(screen) {
+  document.querySelectorAll(".screen").forEach((node) => node.classList.remove("active"));
+  document.querySelectorAll("nav button").forEach((node) => {
+    if (node.dataset.screen === screen) node.setAttribute("aria-current", "page");
+    else node.removeAttribute("aria-current");
+  });
+  $("screen-" + screen).classList.add("active");
+  if (screen === "job") renderJob();
+  if (screen === "queue") renderQueue();
+}
+
+function toast(text) {
+  const node = $("toast");
+  node.textContent = text;
+  node.style.display = "block";
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { node.style.display = "none"; }, 2800);
+}
+
+function renderJob() {
+  $("job-title").textContent = "任务 " + state.id;
+  const roundText = state.status === "收集中"
+    ? "正在读取链接"
+    : state.human
+      ? "已标为需人工"
+      : state.passed
+        ? "检查通过，可以排进今晚"
+        : "第 " + state.round + " 轮 · 有 1 条未通过";
+  $("job-lede").textContent = state.status + " · " + roundText;
+  $("status-rail").innerHTML = STATUSES.map((name) => {
+    const on = name === state.status;
+    const bad = name === "需人工" && on;
+    return '<span class="' + (on ? "on" : "") + (bad ? " bad" : "") + '">' + name + "</span>";
+  }).join("");
+  $("cards").innerHTML = SHOTS.map((shot, index) => {
+    const fail = !state.passed && !state.human && index === 4;
+    return '<article class="shot' + (fail ? " fail" : "") + '">'
+      + '<div class="frame" style="background:' + shot.tone + '"><span class="time">' + shot.t + '</span><b>参考帧 ' + (index + 1) + "</b></div>"
+      + '<div class="body"><h3>' + shot.title + "</h3><p>" + shot.text + '</p><div class="meta">' + shot.keep + "</div></div></article>";
+  }).join("");
+  const checks = state.passed || state.human ? CHECKS_PASS : CHECKS_FAIL;
+  $("check-heading").textContent = state.human ? "检查已停止" : "检查结果 · 第 " + state.round + " / 3 轮";
+  $("check-list").innerHTML = (state.human ? CHECKS_FAIL : checks).map(([name, ok]) => {
+    return '<div class="check"><span>' + name + '</span><span class="' + (ok ? "ok" : "no") + '">' + (ok ? "通过" : "未通过") + "</span></div>";
+  }).join("");
+  $("btn-queue").disabled = !state.passed || state.queued || state.human;
+  $("btn-recheck").disabled = state.passed || state.human || state.round >= 3;
+  $("job-note").textContent = state.human
+    ? "这一条不再进入今晚队列。"
+    : state.passed
+      ? "五张卡都已通过。排进今晚后，00:00 才会开始生成。"
+      : "第 5 镜把中文字幕写进了生成提示词。字幕应留到成片之后再叠。";
+}
+
+function renderQueue() {
+  const rows = [];
+  if (state.queued) {
+    rows.push({ id: state.id, name: $("fact-title").value || "桌面磁吸手机支架", status: "已排队", play: "等待 00:00" });
+  }
+  rows.push(...queueSeed);
+  $("queue-body").innerHTML = rows.map((row) => {
+    const play = row.status === "已完成"
+      ? '<div class="player">▶ ' + row.play + "</div>"
+      : row.play;
+    return "<tr><td>" + row.id + "</td><td>" + row.name + "</td><td>" + row.status + "</td><td>" + play + "</td></tr>";
+  }).join("");
+}
+
+document.querySelectorAll("nav button").forEach((node) => {
+  node.addEventListener("click", () => show(node.dataset.screen));
+});
+
+$("create-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const product = $("product-url").value.trim();
+  const video = $("video-url").value.trim();
+  if (!product || !video) return;
+  state.id = "SV-1042";
+  state.status = "收集中";
+  state.round = 1;
+  state.passed = false;
+  state.human = false;
+  state.queued = false;
+  show("job");
+  toast("已返回任务编号 " + state.id);
+  setTimeout(() => {
+    state.status = "检查中";
+    renderJob();
+  }, 700);
+});
+
+$("btn-recheck").addEventListener("click", () => {
+  state.round += 1;
+  state.passed = true;
+  state.status = "检查中";
+  renderJob();
+  toast("已改掉第 5 镜的字幕提示，第 " + state.round + " 轮通过");
+});
+
+$("btn-queue").addEventListener("click", () => {
+  state.queued = true;
+  state.status = "已排队";
+  renderJob();
+  show("queue");
+  toast(state.id + " 已排进今晚，00:00 后才会生成");
+});
+
+$("btn-human").addEventListener("click", () => {
+  state.human = true;
+  state.passed = false;
+  state.queued = false;
+  state.status = "需人工";
+  renderJob();
+  toast(state.id + " 已标为需人工");
+});
+
+renderJob();
+</script>
+</body>
+</html>

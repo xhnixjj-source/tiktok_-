@@ -1,0 +1,27 @@
+# deps
+board/node_modules/
+web/node_modules/
+**/__pycache__/
+*.pyc
+.venv/
+venv/
+
+# local runtime / secrets
+.env
+.env.*
+!.env.example
+data/
+*.sqlite
+*.db
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# temp
+tmp-*.py
+tmp-*/
+*.log
+.cache/

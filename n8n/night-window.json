@@ -1,0 +1,89 @@
+{
+  "name": "带货视频夜间窗口",
+  "description": "只负责北京时间 00:00 打开队列、09:30 关闭。n8n 的时区需要是 Asia/Shanghai。生成由 127.0.0.1:8790 的工人线程调用 BobToken 的 Seedance 2.0 Fast，这里不提交任务。",
+  "active": false,
+  "nodes": [
+    {
+      "id": "open-cron",
+      "name": "00:00 打开",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 0 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "open-call",
+      "name": "打开队列",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [280, 0],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8790/scheduler/open",
+        "options": {}
+      }
+    },
+    {
+      "id": "close-cron",
+      "name": "09:30 关闭",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 220],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 9 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "close-call",
+      "name": "关闭队列",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [280, 220],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8790/scheduler/close",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "00:00 打开": {
+      "main": [
+        [
+          {
+            "node": "打开队列",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "09:30 关闭": {
+      "main": [
+        [
+          {
+            "node": "关闭队列",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
